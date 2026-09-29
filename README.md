@@ -8,17 +8,20 @@ Mac上の簡易Web画面からGarmin Connectの活動を取得し、体重・食
 > [!WARNING]
 > Garmin接続には非公式の`garminconnect`ライブラリを使用します。Garmin側の仕様変更、レート制限、認証方式の変更によって、予告なく停止する可能性があります。
 
-## 初期版でできること
+## できること
 
 - Garminの活動概要を日付範囲で同期（初期値は直近90日）
 - Garmin活動IDを一意キーにしたupsert（再同期しても重複しない）
-- 日時、種目、距離、時間、平均ペース、平均・最大心拍などを保存
+- 日時、種目、距離、時間、平均ペース、平均・最大心拍などの概要を保存
+- ラップ、心拍ゾーン、心拍・速度・ケイデンス・パワー等の時系列、天候、ギアを詳細データとして保存
+- 有酸素効率指数、週間走行距離、週間獲得標高、心拍ドリフトを期間グラフで確認
+- 各活動に練習区分、RPE、疲労感、痛み、路面、実施状況、目的、メモを記録
 - ランニング／トレイルランニングを画面で絞り込み
 - 体重とメモの追加・編集・削除
 - 食事区分、自由記述、任意のカロリー・PFCの追加・編集・削除
 - 同期中表示、追加・更新・スキップ件数、失敗理由、同期履歴の記録
 
-GPS軌跡、FITファイル、写真解析、栄養量の自動推定は対象外です。
+GPS座標・軌跡、FITファイル、写真解析、栄養量の自動推定は対象外です。Garminの時系列応答に位置情報が含まれていても、MyFitnessは緯度・経度をDBへ保存しません。
 
 ## 安全設計
 
@@ -68,7 +71,8 @@ uv sync --extra dev
 
 1. [Supabase Dashboard](https://supabase.com/dashboard)で`New project`を選び、自分専用プロジェクトを作成します。
 2. Dashboardの`SQL Editor`で[`supabase/schema.sql`](supabase/schema.sql)を開き、全SQLを実行します。
-3. `Project Settings` → `API`でProject URLとsecret key（またはlegacy service_role key）を確認します。
+3. Dashboardの`Settings` → `API Keys`でsecret key（またはlegacy service_role key）を確認します。
+4. Project URLはDashboard上部の`Connect`、または`Settings` → `Data API`で確認します。
 
 secret/service_role keyは強い権限を持ちます。ブラウザ、GitHub、チャット、スクリーンショットへ貼らないでください。新しい`sb_secret_...`形式を推奨し、旧service_role JWTにも互換対応しています。
 
@@ -85,6 +89,7 @@ chmod 600 .env
 SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 SUPABASE_SECRET_KEY=sb_secret_REPLACE_ME
 GARMIN_TOKEN_STORE=~/.garminconnect_personal
+MYFITNESS_DETAIL_SYNC_LIMIT=10
 ```
 
 検証済みの`~/.garminconnect_personal`を使う場合、そのパスを指定するだけです。既存ファイルを移動・コピー・削除しません。新しく分ける場合は、例えば`~/.garminconnect_myfitness`を指定します。
@@ -111,9 +116,22 @@ uv run myfitness serve
 
 ### Garmin同期
 
-初期表示は直近90日です。過去データは開始日・終了日を指定して分割同期できます。同じ期間を再同期しても`garmin_activity_id`の一意制約とupsertにより重複しません。Garminから返らない概要項目はDBで`NULL`のまま保持します。
+初期表示は直近90日です。過去データは開始日・終了日を指定して分割同期できます。同じ期間を再同期しても`garmin_activity_id`の一意制約とupsertにより重複しません。Garminから返らない項目はDBで`NULL`のまま保持します。
+
+1回の同期で詳細取得する活動数は、Garminへの連続アクセスを抑えるため初期値10件です。画面に「未取得の詳細あり」と表示された場合は、少し間隔を空けて同じ期間を再同期してください。`MYFITNESS_DETAIL_SYNC_LIMIT`は1〜50の範囲で変更できます。429が発生した場合は連打せず、時間を置いてください。
 
 DBの日時は`timestamptz`、API送信値はISO 8601で扱い、画面ではMac／ブラウザのローカルタイムゾーンで表示します。距離はDBでメートル、時間は秒、速度はm/sとして保存し、画面でkmや分/kmへ変換します。
+
+### 走力の推移
+
+グラフは横軸が期間、縦軸は選択した指標です。
+
+- **有酸素効率指数**: 3km以上かつ20分以上の通常ランニングについて、勾配補正速度（取得できない場合は平均速度）÷平均心拍を計算します。最初の最大6活動の中央値を100とした固定基準で、各週の中央値を表示します。トレイルは地形差が大きいためこの指数から除外します。
+- **週間走行距離**: ランニングとトレイルランニングの週合計です。
+- **週間獲得標高**: ランニングとトレイルランニングの週合計です。
+- **心拍ドリフト**: 時系列データの前半と後半で心拍÷速度の変化を比較します。低い値ほど、同じ運動強度を保ちやすかった目安になります。
+
+気温、疲労、コース、練習内容でも数値は変動します。単独の活動で判断せず、複数週の傾向として利用してください。
 
 ### 体重・食事
 
@@ -146,6 +164,16 @@ uv run myfitness garmin-login
 - `supabase/schema.sql`を実行済みか確認する
 - Supabase Dashboardでプロジェクトが一時停止していないか確認する
 
+### 詳細ボタンでDBエラーになる（既存利用者）
+
+v0.1から更新した場合は、Supabase Dashboardの`SQL Editor`で次のマイグレーションを1回実行してください。
+
+```text
+supabase/migrations/002_activity_details.sql
+```
+
+その後アプリを再起動して同期します。新規セットアップで最新の`supabase/schema.sql`を実行した場合、この追加操作は不要です。
+
 ### 画面が開かない
 
 起動中のターミナルにエラーがないか確認し、<http://127.0.0.1:8000> を直接開きます。8000番が使用中なら次を使えます。
@@ -166,6 +194,8 @@ uv run pytest
 
 - 活動IDによる追加／更新判定とupsert境界
 - Garmin日時のUTC化、メートル・秒の維持、欠損値の`NULL`
+- 詳細時系列の変換とGPS座標を保存しないこと
+- 固定基準の有酸素効率指数、週間集計、心拍ドリフト
 - 429発生時に書き込み・再試行せず、失敗履歴を残すこと
 - 食事の未入力栄養値が`NULL`のままであること
 - localhost以外のHostヘッダーを拒否すること
@@ -189,11 +219,13 @@ src/myfitness/
   cli.py       # garmin-login / serve
   garmin.py    # 非公式Garmin接続を隔離
   db.py        # Pythonサーバー専用Supabase RESTアクセス
-  sync.py      # upsertと同期履歴
+  sync.py      # 概要・詳細のupsertと同期履歴
+  analytics.py # 走力指標と週間集計
   web.py       # ローカルWeb API
   templates/   # HTML
   static/      # CSS / JavaScript（ビルド不要）
 supabase/schema.sql
+supabase/migrations/002_activity_details.sql
 tests/
 ```
 

@@ -33,6 +33,40 @@
       <div id="sync-result" class="sync-result" aria-live="polite"></div>
     </section>
 
+    <section class="panel growth-panel">
+      <div class="section-heading">
+        <div>
+          <p class="section-label">RUNNING GROWTH</p>
+          <h2>走力の推移</h2>
+          <p class="muted">有酸素効率は最初の最大6回の通常ランニングを100とした相対指数です。</p>
+        </div>
+        <div class="growth-controls">
+          <label>指標
+            <select id="growth-metric">
+              <option value="efficiency_index">有酸素効率指数</option>
+              <option value="weekly_distance_km">週間走行距離</option>
+              <option value="weekly_elevation_m">週間獲得標高</option>
+              <option value="decoupling_pct">心拍ドリフト</option>
+            </select>
+          </label>
+          <label>期間
+            <select id="growth-period">
+              <option value="90">3か月</option>
+              <option value="180" selected>6か月</option>
+              <option value="365">1年</option>
+              <option value="0">全期間</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div id="growth-summary" class="growth-summary"></div>
+      <div class="chart-wrap">
+        <svg id="growth-chart" viewBox="0 0 900 330" role="img" aria-label="走力の推移グラフ"></svg>
+        <div id="chart-tooltip" class="chart-tooltip" hidden></div>
+      </div>
+      <p id="growth-definition" class="muted"></p>
+    </section>
+
     <section class="panel">
       <div class="section-heading">
         <div><p class="section-label">ACTIVITIES</p><h2>活動一覧</h2></div>
@@ -46,7 +80,7 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>日時</th><th>種目</th><th>距離</th><th>時間</th><th>平均ペース</th><th>平均心拍</th></tr></thead>
+          <thead><tr><th>日時</th><th>種目</th><th>距離</th><th>時間</th><th>平均ペース</th><th>平均心拍</th><th></th></tr></thead>
           <tbody id="activities-body"></tbody>
         </table>
       </div>
@@ -84,6 +118,53 @@
       </section>
     </div>
   </main>
+
+  <dialog id="activity-dialog" class="activity-dialog">
+    <div class="dialog-heading">
+      <div><p class="section-label">ACTIVITY DETAIL</p><h2 id="detail-title">活動詳細</h2></div>
+      <button id="detail-close" type="button" class="secondary">閉じる</button>
+    </div>
+    <div id="detail-status" class="message" hidden></div>
+    <div id="detail-summary" class="metric-grid"></div>
+
+    <div class="detail-columns">
+      <section>
+        <h3>心拍ゾーン</h3>
+        <div id="detail-zones"></div>
+      </section>
+      <section>
+        <h3>天候・ギア</h3>
+        <div id="detail-context" class="detail-context"></div>
+      </section>
+    </div>
+
+    <section>
+      <h3>ラップ</h3>
+      <div class="table-wrap">
+        <table class="detail-table">
+          <thead><tr><th>#</th><th>距離</th><th>時間</th><th>ペース</th><th>平均心拍</th><th>獲得標高</th></tr></thead>
+          <tbody id="detail-laps"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h3>練習メモ</h3>
+      <form id="annotation-form" class="annotation-form">
+        <input id="annotation-activity-id" type="hidden">
+        <label>練習区分<select id="annotation-category"><option value="">未設定</option><option value="easy">イージー</option><option value="long">ロング走</option><option value="tempo">テンポ走</option><option value="threshold">閾値走</option><option value="interval">インターバル</option><option value="race">レース</option><option value="recovery">リカバリー</option><option value="other">その他</option></select></label>
+        <label>RPE（0〜10）<input id="annotation-rpe" type="number" min="0" max="10"></label>
+        <label>疲労感（1〜5）<input id="annotation-fatigue" type="number" min="1" max="5"></label>
+        <label>痛み（0〜5）<input id="annotation-pain" type="number" min="0" max="5"></label>
+        <label>路面<select id="annotation-surface"><option value="">未設定</option><option value="road">舗装路</option><option value="track">トラック</option><option value="trail">トレイル</option><option value="treadmill">トレッドミル</option><option value="mixed">混在</option><option value="other">その他</option></select></label>
+        <label>実施状況<select id="annotation-completion"><option value="">未設定</option><option value="completed">完遂</option><option value="modified">変更</option><option value="stopped">中断</option></select></label>
+        <label class="checkbox-label"><input id="annotation-race" type="checkbox">レースとして記録</label>
+        <label class="wide">練習目的<textarea id="annotation-goal" rows="2"></textarea></label>
+        <label class="wide">メモ<textarea id="annotation-notes" rows="3"></textarea></label>
+        <div class="wide"><button type="submit">練習メモを保存</button></div>
+      </form>
+    </section>
+  </dialog>
   <script src="/static/app.js" defer></script>
 </body>
 </html>

@@ -17,6 +17,7 @@ class Settings:
     supabase_secret_key: str
     garmin_token_store: Path
     log_level: str = "INFO"
+    detail_sync_limit: int = 10
 
     @classmethod
     def from_env(cls, *, require_supabase: bool = True) -> Settings:
@@ -37,9 +38,18 @@ class Settings:
             raise ConfigurationError(
                 "GARMIN_TOKEN_STORE は絶対パスまたは ~/ 配下を指定してください。"
             )
+        try:
+            detail_sync_limit = int(os.getenv("MYFITNESS_DETAIL_SYNC_LIMIT", "10"))
+        except ValueError as exc:
+            raise ConfigurationError(
+                "MYFITNESS_DETAIL_SYNC_LIMIT は整数で指定してください。"
+            ) from exc
+        if not 1 <= detail_sync_limit <= 50:
+            raise ConfigurationError("MYFITNESS_DETAIL_SYNC_LIMIT は1〜50で指定してください。")
         return cls(
             supabase_url=url,
             supabase_secret_key=key,
             garmin_token_store=token_store,
             log_level=os.getenv("MYFITNESS_LOG_LEVEL", "INFO").upper(),
+            detail_sync_limit=detail_sync_limit,
         )

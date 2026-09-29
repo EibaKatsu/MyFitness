@@ -7,7 +7,7 @@ from myfitness.web import create_app
 
 
 class EmptyRepository:
-    def list_activities(self): return []
+    def list_activities(self, limit=500): return []
     def list_rows(self, table): return []
     def list_syncs(self): return []
 

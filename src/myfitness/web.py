@@ -6,17 +6,18 @@ from pathlib import Path
 from threading import Lock
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Response, status
+from fastapi import FastAPI, HTTPException, Query, Response, status
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.requests import Request
 
+from .analytics import build_growth_metrics
 from .config import Settings
 from .db import DatabaseError, SupabaseRepository
 from .garmin import GarminConnectGateway, GarminError
-from .models import MealInput, SyncRequest, WeightInput
+from .models import ActivityAnnotationInput, MealInput, SyncRequest, WeightInput
 from .sync import SyncService
 
 logger = logging.getLogger(__name__)
@@ -39,7 +40,7 @@ def create_app(
     )
     garmin_factory = garmin_factory or (lambda: GarminConnectGateway(settings.garmin_token_store))
 
-    app = FastAPI(title="MyFitness", version="0.1.0", docs_url=None, redoc_url=None)
+    app = FastAPI(title="MyFitness", version="0.2.0", docs_url=None, redoc_url=None)
     app.add_middleware(
         TrustedHostMiddleware,
         allowed_hosts=["127.0.0.1", "localhost", "testserver"],
@@ -82,7 +83,9 @@ def create_app(
         if not sync_lock.acquire(blocking=False):
             raise HTTPException(status_code=409, detail="別のGarmin同期が実行中です。")
         try:
-            service = SyncService(repository_factory(), garmin_factory())
+            service = SyncService(
+                repository_factory(), garmin_factory(), settings.detail_sync_limit
+            )
             result = service.run(request.start_date, request.end_date)
             return {
                 "sync_id": result.sync_id,
@@ -90,9 +93,31 @@ def create_app(
                 "added_count": result.added_count,
                 "updated_count": result.updated_count,
                 "skipped_count": result.skipped_count,
+                "detail_synced_count": result.detail_synced_count,
+                "detail_failed_count": result.detail_failed_count,
+                "detail_has_more": result.detail_has_more,
             }
         finally:
             sync_lock.release()
+
+    @app.get("/api/analytics/growth")
+    def growth(
+        period_days: int = Query(default=180, ge=0, le=3650),
+    ) -> dict[str, Any]:
+        activities = repository_factory().list_activities(limit=5000)
+        return build_growth_metrics(
+            activities, period_days=period_days if period_days else None
+        )
+
+    @app.get("/api/activities/{row_id}")
+    def activity_detail(row_id: str) -> dict[str, Any]:
+        return repository_factory().get_activity_detail(row_id)
+
+    @app.put("/api/activities/{row_id}/annotation")
+    def update_activity_annotation(
+        row_id: str, value: ActivityAnnotationInput
+    ) -> dict[str, Any]:
+        return repository_factory().upsert_activity_annotation(row_id, _json_values(value))
 
     @app.post("/api/weights", status_code=status.HTTP_201_CREATED)
     def create_weight(value: WeightInput) -> dict[str, Any]:

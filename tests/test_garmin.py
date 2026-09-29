@@ -1,7 +1,12 @@
 
 import pytest
 
-from myfitness.garmin import map_activity
+from myfitness.garmin import (
+    calculate_aerobic_decoupling,
+    map_activity,
+    map_samples,
+    map_weather,
+)
 
 
 def test_map_activity_converts_timestamp_and_preserves_metric_units():
@@ -43,3 +48,48 @@ def test_map_activity_allows_missing_summary_values():
 def test_map_activity_rejects_missing_id():
     with pytest.raises(ValueError, match="活動ID"):
         map_activity({"startTimeGMT": "2026-09-20T10:00:00Z"})
+
+
+def test_map_samples_uses_descriptors_and_excludes_coordinates():
+    payload = {
+        "metricDescriptors": [
+            {"key": "directTimestamp", "metricsIndex": 0},
+            {"key": "sumDistance", "metricsIndex": 1},
+            {"key": "directHeartRate", "metricsIndex": 2},
+            {"key": "directSpeed", "metricsIndex": 3},
+            {"key": "directLatitude", "metricsIndex": 4},
+            {"key": "directLongitude", "metricsIndex": 5},
+        ],
+        "activityDetailMetrics": [
+            {"metrics": [1_790_000_000_000, 1000.0, 140.0, 3.5, 35.0, 139.0]}
+        ],
+    }
+    rows = map_samples(payload)
+    assert rows[0]["distance_m"] == 1000.0
+    assert rows[0]["heart_rate_bpm"] == 140
+    assert rows[0]["speed_mps"] == 3.5
+    assert "latitude" not in rows[0]
+    assert "longitude" not in rows[0]
+    assert rows[0]["recorded_at"].endswith("+00:00")
+
+
+def test_decoupling_compares_second_half_hr_to_speed_ratio():
+    samples = [
+        {"heart_rate_bpm": 140, "speed_mps": 4.0} for _ in range(10)
+    ] + [{"heart_rate_bpm": 154, "speed_mps": 4.0} for _ in range(10)]
+    assert calculate_aerobic_decoupling(samples) == pytest.approx(10.0)
+
+
+def test_weather_accepts_epoch_timestamp_and_excludes_coordinates():
+    weather = map_weather(
+        {
+            "issueDate": 1_790_000_000_000,
+            "temp": 20,
+            "latitude": 35.0,
+            "longitude": 139.0,
+        }
+    )
+    assert weather is not None
+    assert weather["observed_at"].endswith("+00:00")
+    assert "latitude" not in weather
+    assert "longitude" not in weather

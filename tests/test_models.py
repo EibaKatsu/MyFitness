@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 import pytest
 from pydantic import ValidationError
 
-from myfitness.models import MealInput, SyncRequest
+from myfitness.models import ActivityAnnotationInput, MealInput, SyncRequest
 
 
 def test_meal_optional_nutrients_remain_null():
@@ -30,3 +30,8 @@ def test_datetime_requires_timezone():
 def test_sync_rejects_reversed_dates():
     with pytest.raises(ValidationError, match="開始日"):
         SyncRequest(start_date="2026-09-02", end_date="2026-09-01")
+
+
+def test_activity_annotation_validates_rpe():
+    with pytest.raises(ValidationError):
+        ActivityAnnotationInput(session_rpe=11)

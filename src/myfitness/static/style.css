@@ -45,9 +45,46 @@ th { color: var(--muted); font-size: 12px; letter-spacing: .05em; }
 .entry-item strong { display: block; margin: 3px 0; }
 .item-actions button { padding: 6px 10px; font-size: 12px; }
 .compact select { min-width: 190px; }
+.growth-controls { display: flex; gap: 12px; flex-wrap: wrap; }
+.growth-controls select { min-width: 170px; }
+.growth-summary { margin: 18px 0 2px; min-height: 24px; font-weight: 800; color: var(--green); }
+.chart-wrap { position: relative; width: 100%; overflow: hidden; }
+#growth-chart { display: block; width: 100%; min-height: 260px; }
+.chart-frame { fill: #fff; stroke: var(--line); }
+.chart-grid { stroke: #e9e4db; stroke-width: 1; }
+.chart-axis { fill: var(--muted); font-size: 12px; }
+.chart-axis-title { fill: var(--ink); font-size: 13px; font-weight: 700; }
+.chart-line { fill: none; stroke: var(--green); stroke-width: 3; }
+.chart-point { fill: var(--panel); stroke: var(--green); stroke-width: 2; }
+.chart-baseline { stroke: var(--amber); stroke-width: 1.5; stroke-dasharray: 5 5; }
+.chart-tooltip { position: absolute; pointer-events: none; background: var(--ink); color: white; padding: 8px 10px; border-radius: 7px; font-size: 12px; transform: translate(-50%, -110%); white-space: nowrap; }
+.activity-dialog { width: min(1040px, calc(100vw - 32px)); max-height: calc(100vh - 32px); border: 1px solid var(--line); border-radius: 16px; background: var(--panel); color: var(--ink); padding: 24px; }
+.activity-dialog::backdrop { background: rgba(14, 27, 22, .5); }
+.dialog-heading { display: flex; justify-content: space-between; gap: 20px; align-items: start; }
+.activity-dialog h3 { margin: 28px 0 12px; font-family: Georgia, serif; }
+.metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.metric-card { border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.metric-card span { display: block; color: var(--muted); font-size: 12px; }
+.metric-card strong { display: block; margin-top: 4px; font-size: 18px; }
+.detail-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+.zone-row { display: grid; grid-template-columns: 32px 1fr 72px; gap: 8px; align-items: center; margin: 8px 0; font-size: 13px; }
+.zone-bar { height: 9px; background: #ebe7df; border-radius: 5px; overflow: hidden; }
+.zone-bar i { display: block; height: 100%; background: var(--green); }
+.detail-context { display: grid; gap: 8px; font-size: 14px; }
+.detail-table { min-width: 620px; }
+.annotation-form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.annotation-form .wide { grid-column: 1 / -1; }
+.checkbox-label { display: flex; align-items: center; gap: 8px; align-self: end; min-height: 42px; }
+.checkbox-label input { width: auto; }
+.detail-button { padding: 7px 12px; white-space: nowrap; }
 @media (max-width: 800px) {
   .two-column { grid-template-columns: 1fr; }
   .sync-controls { grid-template-columns: 1fr; width: 100%; }
   .hero { align-items: start; }
   .macros { grid-template-columns: 1fr 1fr; }
+  .growth-controls { width: 100%; }
+  .growth-controls label { flex: 1; }
+  .metric-grid { grid-template-columns: 1fr 1fr; }
+  .detail-columns, .annotation-form { grid-template-columns: 1fr; }
+  .annotation-form .wide { grid-column: auto; }
 }
