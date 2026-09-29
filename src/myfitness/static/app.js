@@ -241,7 +241,8 @@ function renderActivityDetail(detail) {
     metricCard('平均ケイデンス', activity.avg_run_cadence_spm == null ? '—' : `${Math.round(activity.avg_run_cadence_spm)} spm`),
     metricCard('平均パワー', activity.avg_power_w == null ? '—' : `${Math.round(activity.avg_power_w)} W`),
     metricCard('有酸素 / 無酸素TE', `${activity.training_effect ?? '—'} / ${activity.anaerobic_training_effect ?? '—'}`),
-    metricCard('トレーニング負荷', activity.activity_training_load ?? '—'),
+    metricCard('トレーニング負荷', activity.activity_training_load == null
+      ? '—' : Number(activity.activity_training_load).toFixed(1)),
     metricCard('心拍ドリフト', activity.aerobic_decoupling_pct == null ? '—' : `${Number(activity.aerobic_decoupling_pct).toFixed(1)} %`),
     metricCard('時系列データ', `${detail.samples.length} 点`),
   ].join('');
@@ -261,8 +262,8 @@ function renderContext(weather, gear) {
   const rows = [];
   if (weather) {
     rows.push(`天候: ${esc(weather.weather_description || '—')}`);
-    rows.push(`気温: ${weather.temperature_raw ?? '—'} / 湿度: ${weather.relative_humidity_pct ?? '—'}%`);
-    rows.push(`風: ${weather.wind_speed_raw ?? '—'} ${esc(weather.wind_direction_compass || '')}`);
+    rows.push(`気温（Garmin値）: ${weather.temperature_raw ?? '—'} / 湿度: ${weather.relative_humidity_pct ?? '—'}%`);
+    rows.push(`風速（Garmin値）: ${weather.wind_speed_raw ?? '—'} ${esc(weather.wind_direction_compass || '')}`);
   }
   if (gear.length) {
     rows.push(`ギア: ${gear.map((item) => esc(item.display_name || item.model || item.gear_type)).join(', ')}`);
