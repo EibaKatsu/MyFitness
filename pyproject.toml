@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "myfitness-local"
+version = "0.1.0"
+description = "Garmin Connect activities, weight, and meal records in your own Supabase project"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+authors = [{ name = "MyFitness contributors" }]
+dependencies = [
+  "fastapi>=0.115,<1",
+  "garminconnect==0.3.16",
+  "httpx>=0.27,<1",
+  "jinja2>=3.1,<4",
+  "python-dotenv>=1.0,<2",
+  "typer>=0.15,<1",
+  "uvicorn>=0.34,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3,<9",
+  "pytest-cov>=6,<8",
+  "ruff>=0.11,<1",
+]
+
+[project.scripts]
+myfitness = "myfitness.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/myfitness"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

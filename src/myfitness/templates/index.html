@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MyFitness</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="hero">
+    <div>
+      <p class="eyebrow">PERSONAL FITNESS LOG</p>
+      <h1>MyFitness</h1>
+      <p>Garminの活動、体重、食事を、自分のSupabaseに。</p>
+    </div>
+    <button id="reload" class="secondary">再読み込み</button>
+  </header>
+
+  <main>
+    <div id="message" class="message" hidden></div>
+
+    <section class="panel sync-panel">
+      <div>
+        <p class="section-label">GARMIN SYNC</p>
+        <h2>活動データ取得</h2>
+        <p id="last-sync" class="muted">最終同期を確認中…</p>
+      </div>
+      <form id="sync-form" class="sync-controls">
+        <label>開始日<input id="sync-start" name="start_date" type="date" required></label>
+        <label>終了日<input id="sync-end" name="end_date" type="date" required></label>
+        <button id="sync-button" type="submit">活動データ取得</button>
+      </form>
+      <div id="sync-result" class="sync-result" aria-live="polite"></div>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading">
+        <div><p class="section-label">ACTIVITIES</p><h2>活動一覧</h2></div>
+        <label class="compact">種目
+          <select id="activity-filter">
+            <option value="all">すべて</option>
+            <option value="running">ランニング</option>
+            <option value="trail_running">トレイルランニング</option>
+          </select>
+        </label>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>日時</th><th>種目</th><th>距離</th><th>時間</th><th>平均ペース</th><th>平均心拍</th></tr></thead>
+          <tbody id="activities-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="two-column">
+      <section class="panel">
+        <p class="section-label">WEIGHT</p><h2>体重</h2>
+        <form id="weight-form" class="entry-form">
+          <input id="weight-id" type="hidden">
+          <label>日時<input id="weight-at" type="datetime-local" required></label>
+          <label>体重（kg）<input id="weight-kg" type="number" min="0.1" max="500" step="0.1" required></label>
+          <label>メモ<textarea id="weight-note" rows="2"></textarea></label>
+          <div class="form-actions"><button type="submit">保存</button><button id="weight-cancel" type="button" class="secondary" hidden>編集取消</button></div>
+        </form>
+        <div id="weights-list" class="entry-list"></div>
+      </section>
+
+      <section class="panel">
+        <p class="section-label">MEALS</p><h2>食事</h2>
+        <form id="meal-form" class="entry-form">
+          <input id="meal-id" type="hidden">
+          <label>日時<input id="meal-at" type="datetime-local" required></label>
+          <label>食事区分<select id="meal-type" required><option value="breakfast">朝食</option><option value="lunch">昼食</option><option value="dinner">夕食</option><option value="snack">間食</option><option value="other">その他</option></select></label>
+          <label>内容<textarea id="meal-description" rows="3" required></textarea></label>
+          <div class="macros">
+            <label>kcal<input id="meal-calories" type="number" min="0" step="0.1"></label>
+            <label>P (g)<input id="meal-protein" type="number" min="0" step="0.1"></label>
+            <label>F (g)<input id="meal-fat" type="number" min="0" step="0.1"></label>
+            <label>C (g)<input id="meal-carbs" type="number" min="0" step="0.1"></label>
+          </div>
+          <div class="form-actions"><button type="submit">保存</button><button id="meal-cancel" type="button" class="secondary" hidden>編集取消</button></div>
+        </form>
+        <div id="meals-list" class="entry-list"></div>
+      </section>
+    </div>
+  </main>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
